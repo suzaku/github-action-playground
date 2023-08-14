@@ -33,4 +33,4 @@ jobs:
           cmd: yq '${{ env.QUERY_EXPR }}' ${{ env.TARGET_PATH }}
       
       - name: Output original image tag
-        run: echo "Original image tag ${{ steps.orig_image_tag.outputs.stdout }}"
+        run: echo "Original image tag ${{ steps.orig_image_tag.outputs.result }}"
