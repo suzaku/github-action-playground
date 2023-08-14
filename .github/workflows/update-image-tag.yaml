@@ -5,7 +5,7 @@ on:
 
 jobs:
   trigger-update:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       SERVICE_NAME: ${{ github.event.client_payload.service_name || 'test1' }}
       IMAGE_TAG: ${{ github.event.client_payload.image_tag }}
