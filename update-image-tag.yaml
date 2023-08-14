@@ -1,15 +1,13 @@
 ---
 name: Update docker image tag
 on:
-  repository_dispatch:
-    types:
-      - update-docker-image-tag
+  push
 
 jobs:
   trigger-update:
-    runs-on: light
+    runs-on: ubuntu-18.04
     env:
-      SERVICE_NAME: ${{ github.event.client_payload.service_name }}
+      SERVICE_NAME: ${{ github.event.client_payload.service_name || 'test1' }}
       IMAGE_TAG: ${{ github.event.client_payload.image_tag }}
       ENVIRONMENT: ${{ github.event.client_payload.environment || 'dev' }}
       BASE_CHART: ${{ github.event.client_payload.base_chart || '' }}
@@ -22,14 +20,17 @@ jobs:
         with:
           ref: main
       
+      - name: test
+        run: echo "Hello"
+      
       - name: Parse original image tag
         uses: mikefarah/yq@master
         id: orig_image_tag
         env:
           QUERY_EXPR: '${{ env.BASE_CHART }}.image.tag'
-          TARGET_PATH: ${{ env.DEPLOY_TYPE == 'helm' &&  ${{env.CHART_ROOT_PATH}}/${{ env.SERVICE_NAME }}/values-${{ env.ENVIRONMENT }}.yaml || app-config/${{ env.SERVICE_NAME }}/${{ env.ENVIRONMENT }}.yaml }}
+          TARGET_PATH: ${{ env.DEPLOY_TYPE == 'helm' &&  format('{0}/{1}/values-{2}.yaml', env.CHART_ROOT_PATH, env.SERVICE_NAME, env.ENVIRONMENT) || format('app-config/{0}/{1}.yaml', env.SERVICE_NAME, env.ENVIRONMENT) }}
         with:
           cmd: yq '${{ env.QUERY_EXPR }}' ${{ env.TARGET_PATH }}
       
       - name: Output original image tag
-        run: echo "Original image tag: ${{ steps.orig_image_tag.outputs.stdout }}"
+        run: echo "Original image tag ${{ steps.orig_image_tag.outputs.stdout }}"
