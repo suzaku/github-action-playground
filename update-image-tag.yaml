@@ -1,0 +1,35 @@
+---
+name: Update docker image tag
+on:
+  repository_dispatch:
+    types:
+      - update-docker-image-tag
+
+jobs:
+  trigger-update:
+    runs-on: light
+    env:
+      SERVICE_NAME: ${{ github.event.client_payload.service_name }}
+      IMAGE_TAG: ${{ github.event.client_payload.image_tag }}
+      ENVIRONMENT: ${{ github.event.client_payload.environment || 'dev' }}
+      BASE_CHART: ${{ github.event.client_payload.base_chart || '' }}
+      APP_REPO: ${{ github.event.client_payload.app_repo || '' }}
+      DEPLOY_TYPE: ${{ github.event.client_payload.deploy_type || 'helm' }}
+      CHART_ROOT_PATH: ${{ github.event.client_payload.chart_root_path || 'nis-charts' }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          ref: master
+      
+      - name: Parse original image tag
+        uses: mikefarah/yq@master
+        id: orig_image_tag
+        env:
+          QUERY_EXPR: '${{ env.BASE_CHART }}.image.tag'
+          TARGET_PATH: ${{ env.DEPLOY_TYPE == 'helm' &&  ${{env.CHART_ROOT_PATH}}/${{ env.SERVICE_NAME }}/values-${{ env.ENVIRONMENT }}.yaml || app-config/${{ env.SERVICE_NAME }}/${{ env.ENVIRONMENT }}.yaml }}
+        with:
+          cmd: yq '${{ env.QUERY_EXPR }}' ${{ env.TARGET_PATH }}
+      
+      - name: Output original image tag
+        run: echo "Original image tag: ${{ steps.orig_image_tag.outputs.stdout }}"
